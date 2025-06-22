@@ -7,29 +7,29 @@ import { ThemeProvider } from "./components/theme-provider"
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [credentials, setCredentials] = useState<{ apiKey: string; secretKey: string } | null>(null)
+  const [alpacaCredentials, setAlpacaCredentials] = useState<{ apiKey: string; secretKey: string } | null>(null)
 
   useEffect(() => {
     // Check if user is already authenticated
-    const savedCredentials = localStorage.getItem("apiCredentials")
+    const savedCredentials = localStorage.getItem("alpacaCredentials")
     if (savedCredentials) {
       const parsed = JSON.parse(savedCredentials)
-      setCredentials(parsed)
+      setAlpacaCredentials(parsed)
       setIsAuthenticated(true)
     }
   }, [])
 
-  const handleLogin = (apiKey: string, secretKey: string) => {
-    const creds = { apiKey, secretKey }
-    setCredentials(creds)
+  const handleLogin = (alpacaApiKey: string, alpacaSecretKey: string) => {
+    const creds = { apiKey: alpacaApiKey, secretKey: alpacaSecretKey }
+    setAlpacaCredentials(creds)
     setIsAuthenticated(true)
-    localStorage.setItem("apiCredentials", JSON.stringify(creds))
+    localStorage.setItem("alpacaCredentials", JSON.stringify(creds))
   }
 
   const handleLogout = () => {
     setIsAuthenticated(false)
-    setCredentials(null)
-    localStorage.removeItem("apiCredentials")
+    setAlpacaCredentials(null)
+    localStorage.removeItem("alpacaCredentials")
   }
 
   return (
@@ -37,7 +37,7 @@ export default function Home() {
       {!isAuthenticated ? (
         <LoginScreen onLogin={handleLogin} />
       ) : (
-        <Dashboard credentials={credentials} onLogout={handleLogout} />
+        <Dashboard credentials={alpacaCredentials} onLogout={handleLogout} />
       )}
     </ThemeProvider>
   )

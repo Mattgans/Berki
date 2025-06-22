@@ -9,25 +9,20 @@ interface NewsAnalysisProps {
 
 interface AnalysisResult {
   query: string
-  sentiment: "bullish" | "bearish" | "neutral"
-  summary: string
-  keyCompanies: string[]
-  recommendations: {
-    buy: Array<{
-      symbol: string
-      company: string
-      reason: string
-      confidence: number
-      targetPrice?: string
+  investmentAmount: number
+  analysis: {
+    stocksToInvest: Array<{
+      companyName: string
+      stockTicker: string
+      reasoning: string
     }>
-    avoid: Array<{
-      symbol: string
-      company: string
-      reason: string
-      risk: string
+    stocksToAvoid: Array<{
+      companyName: string
+      stockTicker: string
+      reasoning: string
     }>
   }
-  investmentAmount: number
+  tradeLog: string[]
   timestamp: string
 }
 
@@ -44,65 +39,51 @@ export default function NewsAnalysis({ credentials }: NewsAnalysisProps) {
       return
     }
 
+    if (!credentials?.apiKey || !credentials?.secretKey) {
+      setError("Missing Alpaca credentials")
+      return
+    }
+
     setIsAnalyzing(true)
     setError("")
 
     try {
-      // Simulate API call to your backend
-      await new Promise((resolve) => setTimeout(resolve, 3000))
-
-      // Mock analysis result - replace with actual API call
-      const mockResult: AnalysisResult = {
-        query,
-        sentiment: "bullish",
-        summary: `Analysis of "${query}" shows positive market sentiment with several growth opportunities. Key trends include increased adoption, regulatory clarity, and strong financial performance across major players.`,
-        keyCompanies: ["NVIDIA Corp", "Microsoft Corp", "Alphabet Inc", "Tesla Inc", "Advanced Micro Devices"],
-        recommendations: {
-          buy: [
-            {
-              symbol: "NVDA",
-              company: "NVIDIA Corp",
-              reason: "Leading AI chip manufacturer with strong growth prospects",
-              confidence: 85,
-              targetPrice: "$850",
-            },
-            {
-              symbol: "MSFT",
-              company: "Microsoft Corp",
-              reason: "Strong AI integration across products and cloud services",
-              confidence: 78,
-              targetPrice: "$420",
-            },
-            {
-              symbol: "GOOGL",
-              company: "Alphabet Inc",
-              reason: "Significant AI investments and market position",
-              confidence: 72,
-              targetPrice: "$2800",
-            },
-          ],
-          avoid: [
-            {
-              symbol: "INTC",
-              company: "Intel Corp",
-              reason: "Lagging behind in AI chip development",
-              risk: "High competition risk",
-            },
-            {
-              symbol: "IBM",
-              company: "IBM Corp",
-              reason: "Slow adaptation to AI trends",
-              risk: "Market share decline",
-            },
-          ],
+      // Call your Flask backend with Alpaca credentials from login
+      const response = await fetch("http://localhost:5000/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          query: query,
+          investment_amount: investmentAmount,
+          alpaca_api_key: credentials.apiKey,
+          alpaca_secret_key: credentials.secretKey,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Analysis failed")
+      }
+
+      const data = await response.json()
+
+      const result: AnalysisResult = {
+        query,
         investmentAmount,
+        analysis: data.analysis,
+        tradeLog: data.trade_log,
         timestamp: new Date().toISOString(),
       }
 
-      setAnalysisResult(mockResult)
-    } catch (err) {
-      setError("Failed to analyze news. Please try again.")
+      setAnalysisResult(result)
+    } catch (err: any) {
+      if (err.message.includes("fetch")) {
+        setError("Cannot connect to backend server. Make sure your Flask app is running on http://localhost:5000")
+      } else {
+        setError(err.message || "Failed to analyze news. Please try again.")
+      }
     } finally {
       setIsAnalyzing(false)
     }
@@ -113,53 +94,56 @@ export default function NewsAnalysis({ credentials }: NewsAnalysisProps) {
       <div className="analysis-header">
         <h2>AI News Analysis & Trading</h2>
         <p className="analysis-description">
-          Enter a topic to analyze latest news and get AI-powered investment recommendations
+          Enter a topic to analyze latest news and execute AI-powered trades using your Alpaca account
         </p>
       </div>
 
       <div className="analysis-form">
-        <div className="form-row">
-          <div className="form-group flex-grow">
-            <label htmlFor="query" className="form-label">
-              Search Topic
-            </label>
-            <input
-              id="query"
-              type="text"
-              placeholder="e.g., AI stocks, lithium mining, renewable energy"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="form-input"
-              disabled={isAnalyzing}
-            />
-          </div>
+        <div className="analysis-params">
+          <h3>Analysis Parameters</h3>
+          <div className="form-row">
+            <div className="form-group flex-grow">
+              <label htmlFor="query" className="form-label">
+                Search Topic
+              </label>
+              <input
+                id="query"
+                type="text"
+                placeholder="e.g., AI stocks, lithium mining, renewable energy"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                className="form-input"
+                disabled={isAnalyzing}
+              />
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="investment" className="form-label">
-              Investment Amount
-            </label>
-            <input
-              id="investment"
-              type="number"
-              placeholder="10000"
-              value={investmentAmount}
-              onChange={(e) => setInvestmentAmount(Number(e.target.value))}
-              className="form-input investment-input"
-              disabled={isAnalyzing}
-            />
-          </div>
+            <div className="form-group">
+              <label htmlFor="investment" className="form-label">
+                Investment Amount ($)
+              </label>
+              <input
+                id="investment"
+                type="number"
+                placeholder="10000"
+                value={investmentAmount}
+                onChange={(e) => setInvestmentAmount(Number(e.target.value))}
+                className="form-input investment-input"
+                disabled={isAnalyzing}
+              />
+            </div>
 
-          <div className="form-group">
-            <button onClick={handleAnalyze} disabled={isAnalyzing || !query.trim()} className="btn-analyze">
-              {isAnalyzing ? (
-                <>
-                  <span className="loading-spinner"></span>
-                  Analyzing...
-                </>
-              ) : (
-                <>🤖 Analyze</>
-              )}
-            </button>
+            <div className="form-group">
+              <button onClick={handleAnalyze} disabled={isAnalyzing || !query.trim()} className="btn-analyze">
+                {isAnalyzing ? (
+                  <>
+                    <span className="loading-spinner"></span>
+                    Analyzing...
+                  </>
+                ) : (
+                  <>🤖 Analyze & Trade</>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -181,11 +165,15 @@ export default function NewsAnalysis({ credentials }: NewsAnalysisProps) {
               <span className="step-icon">📊</span>
               <span>Generating investment recommendations...</span>
             </div>
+            <div className="loading-step">
+              <span className="step-icon">🚀</span>
+              <span>Executing trades via Alpaca...</span>
+            </div>
           </div>
         </div>
       )}
 
-      {analysisResult && <StockRecommendations analysisResult={analysisResult} credentials={credentials} />}
+      {analysisResult && <StockRecommendations analysisResult={analysisResult} />}
     </div>
   )
 }

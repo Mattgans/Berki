@@ -1,83 +1,42 @@
 "use client"
 
-import { useState } from "react"
-
 interface AnalysisResult {
   query: string
-  sentiment: "bullish" | "bearish" | "neutral"
-  summary: string
-  keyCompanies: string[]
-  recommendations: {
-    buy: Array<{
-      symbol: string
-      company: string
-      reason: string
-      confidence: number
-      targetPrice?: string
+  investmentAmount: number
+  analysis: {
+    stocksToInvest: Array<{
+      companyName: string
+      stockTicker: string
+      reasoning: string
     }>
-    avoid: Array<{
-      symbol: string
-      company: string
-      reason: string
-      risk: string
+    stocksToAvoid: Array<{
+      companyName: string
+      stockTicker: string
+      reasoning: string
     }>
   }
-  investmentAmount: number
+  tradeLog: string[]
   timestamp: string
 }
 
 interface StockRecommendationsProps {
   analysisResult: AnalysisResult
-  credentials: { apiKey: string; secretKey: string } | null
 }
 
-export default function StockRecommendations({ analysisResult, credentials }: StockRecommendationsProps) {
-  const [isTrading, setIsTrading] = useState(false)
-  const [tradeResults, setTradeResults] = useState<any>(null)
-
-  const handleExecuteTrades = async () => {
-    setIsTrading(true)
-
-    try {
-      // Simulate API call to execute trades via Alpaca
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // Mock trade results
-      const mockTradeResults = {
-        executed: true,
-        buyOrders: analysisResult.recommendations.buy.map((stock) => ({
-          symbol: stock.symbol,
-          quantity: Math.floor(analysisResult.investmentAmount / analysisResult.recommendations.buy.length / 300),
-          price: "$" + (Math.random() * 500 + 100).toFixed(2),
-          status: "filled",
-        })),
-        sellOrders: analysisResult.recommendations.avoid.map((stock) => ({
-          symbol: stock.symbol,
-          quantity: Math.floor(Math.random() * 50 + 10),
-          price: "$" + (Math.random() * 200 + 50).toFixed(2),
-          status: "filled",
-        })),
-        totalInvested: analysisResult.investmentAmount,
-        timestamp: new Date().toISOString(),
-      }
-
-      setTradeResults(mockTradeResults)
-    } catch (error) {
-      console.error("Trade execution failed:", error)
-    } finally {
-      setIsTrading(false)
-    }
+export default function StockRecommendations({ analysisResult }: StockRecommendationsProps) {
+  const getLogItemStyle = (logItem: string) => {
+    if (logItem.includes("✅")) return "success"
+    if (logItem.includes("❌")) return "error"
+    if (logItem.includes("⚠️")) return "warning"
+    return "info"
   }
 
-  const getSentimentColor = (sentiment: string) => {
-    switch (sentiment) {
-      case "bullish":
-        return "positive"
-      case "bearish":
-        return "negative"
-      default:
-        return "neutral"
-    }
+  const getLogIcon = (logItem: string) => {
+    if (logItem.includes("✅")) return "✅"
+    if (logItem.includes("❌")) return "❌"
+    if (logItem.includes("⚠️")) return "⚠️"
+    if (logItem.includes("ℹ️")) return "ℹ️"
+    return "📝"
   }
 
   return (
@@ -86,22 +45,12 @@ export default function StockRecommendations({ analysisResult, credentials }: St
       <div className="analysis-summary">
         <div className="summary-header">
           <h3>Analysis Results for "{analysisResult.query}"</h3>
-          <div className={`sentiment-badge ${getSentimentColor(analysisResult.sentiment)}`}>
-            {analysisResult.sentiment.toUpperCase()}
-            {analysisResult.sentiment === "bullish" ? " 📈" : analysisResult.sentiment === "bearish" ? " 📉" : " ➡️"}
-          </div>
+          <div className="timestamp">Completed at {new Date(analysisResult.timestamp).toLocaleTimeString()}</div>
         </div>
-        <p className="summary-text">{analysisResult.summary}</p>
 
-        <div className="key-companies">
-          <h4>Key Companies Identified:</h4>
-          <div className="companies-list">
-            {analysisResult.keyCompanies.map((company, index) => (
-              <span key={index} className="company-tag">
-                {company}
-              </span>
-            ))}
-          </div>
+        <div className="investment-summary">
+          <span className="investment-label">Investment Amount:</span>
+          <span className="investment-amount">${analysisResult.investmentAmount.toLocaleString()}</span>
         </div>
       </div>
 
@@ -110,104 +59,68 @@ export default function StockRecommendations({ analysisResult, credentials }: St
         {/* Buy Recommendations */}
         <div className="recommendations-section">
           <div className="section-header buy-header">
-            <h3>🟢 Recommended Buys ({analysisResult.recommendations.buy.length})</h3>
+            <h3>🟢 AI Recommended Buys ({analysisResult.analysis.stocksToInvest.length})</h3>
           </div>
           <div className="recommendations-list">
-            {analysisResult.recommendations.buy.map((stock, index) => (
-              <div key={index} className="recommendation-card buy-card">
-                <div className="stock-header">
-                  <div className="stock-symbol">{stock.symbol}</div>
-                  <div className="confidence-badge">{stock.confidence}% confidence</div>
+            {analysisResult.analysis.stocksToInvest.length > 0 ? (
+              analysisResult.analysis.stocksToInvest.map((stock, index) => (
+                <div key={index} className="recommendation-card buy-card">
+                  <div className="stock-header">
+                    <div className="stock-symbol">{stock.stockTicker}</div>
+                    <div className="rank-badge">#{index + 1}</div>
+                  </div>
+                  <h4 className="company-name">{stock.companyName}</h4>
+                  <p className="recommendation-reason">{stock.reasoning}</p>
                 </div>
-                <h4 className="company-name">{stock.company}</h4>
-                {stock.targetPrice && <div className="target-price">Target: {stock.targetPrice}</div>}
-                <p className="recommendation-reason">{stock.reason}</p>
-                <button className="btn-buy-stock">Buy {stock.symbol}</button>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="no-recommendations">No buy recommendations generated</div>
+            )}
           </div>
         </div>
 
         {/* Avoid Recommendations */}
         <div className="recommendations-section">
           <div className="section-header avoid-header">
-            <h3>🔴 Stocks to Avoid ({analysisResult.recommendations.avoid.length})</h3>
+            <h3>🔴 Stocks to Avoid ({analysisResult.analysis.stocksToAvoid.length})</h3>
           </div>
           <div className="recommendations-list">
-            {analysisResult.recommendations.avoid.map((stock, index) => (
-              <div key={index} className="recommendation-card avoid-card">
-                <div className="stock-header">
-                  <div className="stock-symbol">{stock.symbol}</div>
-                  <div className="risk-badge">{stock.risk}</div>
+            {analysisResult.analysis.stocksToAvoid.length > 0 ? (
+              analysisResult.analysis.stocksToAvoid.map((stock, index) => (
+                <div key={index} className="recommendation-card avoid-card">
+                  <div className="stock-header">
+                    <div className="stock-symbol">{stock.stockTicker}</div>
+                    <div className="risk-badge">Risk</div>
+                  </div>
+                  <h4 className="company-name">{stock.companyName}</h4>
+                  <p className="recommendation-reason">{stock.reasoning}</p>
                 </div>
-                <h4 className="company-name">{stock.company}</h4>
-                <p className="recommendation-reason">{stock.reason}</p>
-                <button className="btn-sell-stock">Sell {stock.symbol}</button>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="no-recommendations">No avoid recommendations generated</div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Execute Trades Section */}
+      {/* Trade Execution Results */}
       <div className="trading-section">
         <div className="trading-header">
-          <h3>Execute Trades</h3>
-          <div className="investment-info">
-            Investment Amount: <span className="amount">${analysisResult.investmentAmount.toLocaleString()}</span>
-          </div>
+          <h3>🚀 Trade Execution Results</h3>
+          <div className="execution-info">{analysisResult.tradeLog.length} trade actions executed</div>
         </div>
 
-        {!tradeResults ? (
-          <button onClick={handleExecuteTrades} disabled={isTrading} className="btn-execute-trades">
-            {isTrading ? (
-              <>
-                <span className="loading-spinner"></span>
-                Executing Trades...
-              </>
-            ) : (
-              <>🚀 Execute All Recommended Trades</>
-            )}
-          </button>
-        ) : (
-          <div className="trade-results">
-            <div className="results-header">
-              <h4>✅ Trades Executed Successfully</h4>
-              <div className="execution-time">Executed at {new Date(tradeResults.timestamp).toLocaleTimeString()}</div>
+        <div className="trade-log">
+          {analysisResult.tradeLog.map((logItem, index) => (
+            <div key={index} className={`log-item ${getLogItemStyle(logItem)}`}>
+              <span className="log-icon">{getLogIcon(logItem)}</span>
+              <span className="log-text">{logItem.replace(/[✅❌⚠️ℹ️]/g, "").trim()}</span>
             </div>
+          ))}
+        </div>
 
-            <div className="results-grid">
-              <div className="buy-results">
-                <h5>Buy Orders ({tradeResults.buyOrders.length})</h5>
-                {tradeResults.buyOrders.map((order: any, index: number) => (
-                  <div key={index} className="order-result">
-                    <span className="order-symbol">{order.symbol}</span>
-                    <span className="order-details">
-                      {order.quantity} shares @ {order.price}
-                    </span>
-                    <span className="order-status success">✅ {order.status}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="sell-results">
-                <h5>Sell Orders ({tradeResults.sellOrders.length})</h5>
-                {tradeResults.sellOrders.map((order: any, index: number) => (
-                  <div key={index} className="order-result">
-                    <span className="order-symbol">{order.symbol}</span>
-                    <span className="order-details">
-                      {order.quantity} shares @ {order.price}
-                    </span>
-                    <span className="order-status success">✅ {order.status}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="total-invested">
-              Total Invested: <span className="amount">${tradeResults.totalInvested.toLocaleString()}</span>
-            </div>
-          </div>
+        {analysisResult.tradeLog.length === 0 && (
+          <div className="no-trades">No trades were executed. Check your API keys and try again.</div>
         )}
       </div>
     </div>

@@ -1,6 +1,0 @@
-{
-  "imports": {
-    "@tabler/icons-react": "npm:@tabler/icons-react@^3.34.0",
-    "react-router-dom": "npm:react-router-dom@^7.6.2"
-  }
-}
