@@ -4,22 +4,21 @@ import Navbar from "./components/Navbar.tsx";
 // import { StockView } from './components/StockView';
 // import { CryptoView } from './components/CryptoView';
 // import { NewsView } from './components/NewsView';
-// import { PortfolioDisplay } from './components/PortfolioDisplay';
+import { PortfolioDisplay } from './components/PortfolioDisplay';
 // import { TradeModal } from './components/TradeModal';
-import type { Tab } from "./types.ts";
-// import type { Tab, Asset, Stock, Crypto, PortfolioItem, TradeDetails } from './types';
-// import { INITIAL_STOCKS, INITIAL_CRYPTOS, INITIAL_CASH_BALANCE } from './constants';
+import type { Tab, Asset, Stock, Crypto, PortfolioItem, TradeDetails } from './types';
+import { INITIAL_STOCKS, INITIAL_CRYPTOS, INITIAL_CASH_BALANCE } from './constants';
 // import { simulatePriceChange } from './services/mockPriceService';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('stocks');
-  // const [stocks, setStocks] = useState<Stock[]>(INITIAL_STOCKS);
-  // const [cryptos, setCryptos] = useState<Crypto[]>(INITIAL_CRYPTOS);
-  // const [portfolio, setPortfolio] = useState<{ cash: number; items: PortfolioItem[] }>({
-    // cash: INITIAL_CASH_BALANCE,
-    // items: [],
-  // }
-// );
+  const [stocks, setStocks] = useState<Stock[]>(INITIAL_STOCKS);
+  const [cryptos, setCryptos] = useState<Crypto[]>(INITIAL_CRYPTOS);
+  const [portfolio, setPortfolio] = useState<{ cash: number; items: PortfolioItem[] }>({
+    cash: INITIAL_CASH_BALANCE,
+    items: [],
+  }
+);
   // const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   // const [selectedAssetForTrade, setSelectedAssetForTrade] = useState<Asset | null>(null);
   // const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
@@ -113,8 +112,8 @@ const App: React.FC = () => {
             {/* {renderActiveTab()} */}
           </div>
           <div className="lg:col-span-1">
-            <p>Portfolio here</p>
-            {/* <PortfolioDisplay portfolio={portfolio} stocks={stocks} cryptos={cryptos} /> */}
+            {/* <p>Portfolio here</p> */}
+            <PortfolioDisplay portfolio={portfolio} stocks={stocks} cryptos={cryptos} />
           </div>
         </div>
       </main>

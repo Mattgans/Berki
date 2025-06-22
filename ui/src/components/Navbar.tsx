@@ -13,9 +13,6 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab }) => {
     const navItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
-        // { id: 'stocks', label: 'Stocks', icon: <></> },
-        // { id: 'crypto', label: 'Crypto', icon: <></> },
-        // { id: 'news', label: 'News', icon: <></> },
         { id: 'stocks', label: 'Stocks', icon: <IconGraphFilled /> },
         { id: 'crypto', label: 'Crypto', icon: <IconCoinFilled /> },
         { id: 'news', label: 'News', icon: <IconNews /> },

@@ -1,0 +1,20 @@
+.line-item {
+    /* flex justify-between items-center */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.money {
+    /* text-dark-text-secondary */
+    color: lightgreen;
+}
+
+.loss {
+    color: red;
+}
+
+.portfolio {
+    max-width: 25%;
+    background-color: ;
+}
