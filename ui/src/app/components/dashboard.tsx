@@ -29,6 +29,47 @@ export default function Dashboard({ credentials, onLogout }: DashboardProps) {
     { symbol: "NFLX", name: "Netflix Inc.", logo: "🎬" },
   ]
 
+  const handleBuy = async (symbol: string) => {
+    console.log("Buying stock:", symbol)
+    if (!credentials) return
+
+    const response = await fetch("http://localhost:5000/buy", {
+
+      //   stock_to_buy = data.get('symbol')
+      // api_key = data.get('api_key')
+      // api_secret = data.get('api_secret')
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        symbol: symbol,
+        api_secret: credentials.secretKey,
+        api_key: credentials.apiKey,
+      }),
+    })
+  }
+
+  const handleSell = async (symbol: string) => {
+    if (!credentials) return
+
+    const response = await fetch("http://localhost:5000/sell", {
+
+      //   stock_to_buy = data.get('symbol')
+      // api_key = data.get('api_key')
+      // api_secret = data.get('api_secret')
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        symbol: symbol,
+        api_secret: credentials.secretKey,
+        api_key: credentials.apiKey,
+      }),
+    })
+  }
+
   const fetchPortfolio = async () => {
     if (!credentials) return
 
@@ -189,8 +230,8 @@ export default function Dashboard({ credentials, onLogout }: DashboardProps) {
                           </div>
 
                           <div className="holding-actions">
-                            <button className="btn-sell">Sell</button>
-                            <button className="btn-buy">Buy More</button>
+                            <button className="btn-sell" onClick={() => handleSell(holding.symbol)}>Sell</button>
+                            <button className="btn-buy" onClick={() => handleBuy(holding.symbol)}>Buy More</button>
                           </div>
                         </div>
 

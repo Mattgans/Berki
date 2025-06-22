@@ -5,6 +5,7 @@ import alpaca_trade_api as tradeapi
 import google.generativeai as genai
 import json
 import os
+import pandas as pd
 
 app = Flask(__name__)
 CORS(app)
@@ -396,8 +397,70 @@ def get_stock_quote():
         print(f"Quote fetch error for {symbol}: {str(e)}")
         return jsonify({"error": f"Failed to fetch stock quote: {str(e)}"}), 500
 
-# Add pandas import at the top of your file if not already present
-import pandas as pd
+@app.route('/buy', methods=['POST'])
+def buy_stocks():
+    data = request.get_json()
+    stock_to_buy = data.get('symbol')
+    api_key = data.get('api_key')
+    api_secret = data.get('api_secret')
+    
+    # print(data)
+
+    if not stock_to_buy or not api_key or not api_secret:
+        return jsonify({"error": "Missing required fields."}), 400
+
+    try:
+        base_url = 'https://paper-api.alpaca.markets'
+        api = tradeapi.REST(api_key, api_secret, base_url, api_version='v2')
+
+        trade_log = []
+        if stock_to_buy.endswith('USD'):
+            # print("im okay")
+            # For crypto, use the crypto endpoint
+            barset = api.get_crypto_bars(stock_to_buy[:-3] + '/USD', '5T').df.iloc[-1]
+            qty = 1
+            price = barset.close
+        else: 
+            trade = api.get_latest_trade(stock_to_buy)
+            price = trade.p
+            qty = 1
+        if qty > 0:
+            api.submit_order(symbol=stock_to_buy, qty=qty, side='buy', type='market', time_in_force='gtc')
+            trade_log.append(f"✅ BOUGHT {qty} shares of {stock_to_buy} at ~${price:.2f} each.")
+        else:
+            trade_log.append(f"ℹ️ SKIPPED: Not enough funds (${price:.2f}) to buy any shares of {stock_to_buy} at ${price:.2f}.")
+        print("bought okay")
+        return jsonify({"trade_log": trade_log})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/sell', methods=['POST'])
+def sell_stocks():
+    data = request.get_json()
+    stock_to_sell = data.get('symbol')
+    api_key = data.get('api_key')
+    api_secret = data.get('api_secret')
+    print(data)
+    if not stock_to_sell or not api_key or not api_secret:
+        return jsonify({"error": "Missing required fields."}), 400
+
+    try:
+        base_url = 'https://paper-api.alpaca.markets'
+        api = tradeapi.REST(api_key, api_secret, base_url, api_version='v2')
+        
+        trade_log = []
+
+        qty = 1
+        
+        if qty > 0:
+            api.submit_order(symbol=stock_to_sell, qty=qty, side='sell', type='market', time_in_force='gtc')
+            trade_log.append(f"✅ SOLD {qty} shares of {stock_to_sell}.")
+            # trade_log.append(f"✅ SOLD {qty} shares of {stock_to_sell} at ~${price:.2f} each.")
+        else:
+            trade_log.append(f"ℹ️ SKIPPED: No shares to sell.")
+        return jsonify({"trade_log": trade_log})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
