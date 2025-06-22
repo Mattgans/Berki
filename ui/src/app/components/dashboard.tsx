@@ -74,7 +74,7 @@ export default function Dashboard({ credentials, onLogout }: DashboardProps) {
       <header className="dashboard-header">
         <div className="header-content">
           <div>
-            <h1 className="brand">TradeSim Pro</h1>
+            <h1 className="brand">The Daily Prophet</h1>
           </div>
 
           <div className="nav-tabs">
@@ -287,7 +287,7 @@ export default function Dashboard({ credentials, onLogout }: DashboardProps) {
       {/* Footer */}
       <footer className="footer">
         <div className="footer-content">
-          <p className="footer-text">TradeSim Pro - AI-Powered Trading Simulation</p>
+          <p className="footer-text">The Daily Prophet - AI-Powered Trading Simulation</p>
         </div>
       </footer>
     </div>
