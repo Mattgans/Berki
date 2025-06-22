@@ -23,7 +23,7 @@ def fetch_news_by_query(query, api_key):
         'q': query,
         'apiKey': api_key,
         'language': 'en',
-        'sortBy': 'publishedAt',
+        'sortBy': 'relevancy', # 'relevancy', 'publishedAt' 'popularity'
         'pageSize': 10
     }
     
