@@ -1,0 +1,5 @@
+Flask
+requests
+google-generativeai
+alpaca-trade-api
+python-dotenv
