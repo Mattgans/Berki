@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Financial News Analyst</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Financial News Analyst & Trader</h1>
+            <p>Enter a topic, your API keys, and an investment amount to get AI-driven trade recommendations.</p>
+        </header>
+
+        <form id="analysis-form">
+            <div class="form-section api-keys">
+                <h2>API Keys</h2>
+                <div class="grid-inputs">
+                    <input type="password" id="news-api-key" placeholder="NewsAPI Key" required>
+                    <input type="password" id="gemini-api-key" placeholder="Google AI (Gemini) Key" required>
+                    <input type="password" id="alpaca-api-key" placeholder="Alpaca API Key" required>
+                    <input type="password" id="alpaca-secret-key" placeholder="Alpaca Secret Key" required>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Analysis Parameters</h2>
+                <div class="grid-inputs">
+                    <input type="text" id="search-query" placeholder="Enter search query (e.g., 'EV market')" required>
+                    <input type="number" id="investment-amount" placeholder="Investment Amount (USD)" value="1000" required>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn">Analyze & Trade</button>
+        </form>
+
+        <div id="loader" class="hidden">
+            <div class="spinner"></div>
+            <p id="status-text">Fetching news...</p>
+        </div>
+
+        <div id="results" class="hidden">
+            <h2>Analysis Results</h2>
+            <div class="results-grid">
+                <div class="result-card invest">
+                    <h3>📈 Stocks to Invest In</h3>
+                    <div id="stocks-to-invest"></div>
+                </div>
+                <div class="result-card avoid">
+                    <h3>📉 Stocks to Avoid</h3>
+                    <div id="stocks-to-avoid"></div>
+                </div>
+            </div>
+            
+            <div class="result-card log">
+                <h3>📜 Trade Execution Log</h3>
+                <pre id="trade-log"></pre>
+            </div>
+        </div>
+
+        <div id="error-message" class="error hidden"></div>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>
