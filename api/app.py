@@ -4,13 +4,14 @@ import requests
 import alpaca_trade_api as tradeapi
 import google.generativeai as genai
 import json
+import os
 
 app = Flask(__name__)
 CORS(app)
 
 # Add your actual API keys here
-NEWS_API_KEY = "68f0b4a61fe644c7b90bcc655c84f826"
-GEMINI_API_KEY = "AIzaSyDCLQSiHQfXwtbpQ8Uf6AH6DZe6Zz6nOAs"
+NEWS_API_KEY = os.getenv('NEWS_API_KEY')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
 # Configure Gemini
 genai.configure(api_key=GEMINI_API_KEY)
@@ -82,50 +83,59 @@ def get_ai_recommendations(articles, api_key):
         print(f"AI recommendation error: {e}")
         return {"investmentAnalysis": {"stocksToInvest": [], "stocksToAvoid": []}}
 
-def execute_trades(stocks_to_invest, stocks_to_avoid, investment_amount, api_key, secret_key):
-    """Execute trades via Alpaca API."""
+def execute_trades(stocks_to_buy, stocks_to_avoid, investment_amount, api_key, api_secret):
+    """Executes trades via Alpaca paper trading account."""
+    base_url = 'https://paper-api.alpaca.markets'
+    api = tradeapi.REST(api_key, api_secret, base_url, api_version='v2')
+    
     trade_log = []
     
+    # Sell all shares of companies to avoid
     try:
-        base_url = 'https://paper-api.alpaca.markets'
-        api = tradeapi.REST(api_key, secret_key, base_url, api_version='v2')
-        
-        # Get account info
-        account = api.get_account()
-        trade_log.append(f"✅ Connected to Alpaca account: {account.id}")
-        
-        if stocks_to_invest:
-            amount_per_stock = investment_amount / len(stocks_to_invest)
-            
-            for stock in stocks_to_invest:
-                try:
-                    ticker = stock['stockTicker']
-                    # Get current price
-                    barset = api.get_bars(ticker, tradeapi.TimeFrame.Day, limit=1)
-                    if barset:
-                        current_price = float(barset[0].c)
-                        qty = int(amount_per_stock / current_price)
-                        
-                        if qty > 0:
-                            # Place buy order
-                            order = api.submit_order(
-                                symbol=ticker,
-                                qty=qty,
-                                side='buy',
-                                type='market',
-                                time_in_force='gtc'
-                            )
-                            trade_log.append(f"✅ BUY {qty} shares of {ticker} at ${current_price}")
-                        else:
-                            trade_log.append(f"⚠️ Insufficient funds to buy {ticker}")
-                except Exception as e:
-                    trade_log.append(f"❌ Failed to buy {ticker}: {str(e)}")
-        else:
-            trade_log.append("ℹ️ No buy recommendations to execute")
-            
+        positions = {pos.symbol: int(float(pos.qty)) for pos in api.list_positions()}
+        for stock in stocks_to_avoid:
+            symbol = stock.get("stockTicker")
+            if symbol.endswith('/USD'):
+                symbol = symbol.replace('/', '')
+            if symbol and symbol in positions and positions[symbol] > 0:
+                api.submit_order(symbol=symbol, qty=positions[symbol], side='sell', type='market', time_in_force='gtc')
+                trade_log.append(f"✅ SOLD all {positions[symbol]} shares of {symbol}.")
     except Exception as e:
-        trade_log.append(f"❌ Trading error: {str(e)}")
-    
+        trade_log.append(f"⚠️ WARNING: Could not process selling of stocks to avoid. Error: {e}")
+
+    # Distribute funds and buy recommended stocks
+    if not stocks_to_buy:
+        trade_log.append("No stocks recommended for purchase.")
+        return trade_log
+        
+    n = len(stocks_to_buy)
+    weights = [n - i for i in range(n)] # Weighted allocation
+    weight_sum = sum(weights)
+    allocations = [investment_amount * (w / weight_sum) for w in weights]
+
+    for stock, amount in zip(stocks_to_buy, allocations):
+        symbol = stock.get("stockTicker")
+        if not symbol:
+            trade_log.append(f"ℹ️ SKIPPED: No stock ticker provided for {stock.get('companyName')}.")
+            continue
+        
+        try:
+            if symbol.endswith('/USD'):
+                # For crypto, use the crypto endpoint
+                barset = api.get_crypto_bars(symbol, '5T').df.iloc[-1]
+                qty = amount/barset.close
+            else: 
+                trade = api.get_latest_trade(symbol)
+                price = trade.p
+                qty = int(amount // price)
+            if qty > 0:
+                api.submit_order(symbol=symbol, qty=qty, side='buy', type='market', time_in_force='gtc')
+                trade_log.append(f"✅ BOUGHT {qty} shares of {symbol} at ~${price:.2f} each.")
+            else:
+                trade_log.append(f"ℹ️ SKIPPED: Not enough funds (${amount:.2f}) to buy any shares of {symbol} at ${price:.2f}.")
+        except Exception as e:
+            trade_log.append(f"❌ FAILED to buy {symbol}. Error: {e}")
+            
     return trade_log
 
 @app.route('/validate-alpaca', methods=['POST'])
