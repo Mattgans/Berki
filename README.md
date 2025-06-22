@@ -15,9 +15,7 @@ This is a full-stack web application that automates financial analysis and tradi
 - A virtual environment is highly recommended.
 
 ### **Step 2: Get API Keys**
-You will need API keys from three services. The app has fields to enter these, so you don't need to hardcode them.
-- **NewsAPI:** For fetching news articles. [Get a key here](https://newsapi.org/).
-- **Google AI (Gemini):** For content generation and analysis. [Get a key here](https://aistudio.google.com/app/apikey).
+You will need API keys for your trading account. The app has fields to enter these, so you don't need to hardcode them.
 - **Alpaca:** For paper trading. You need an **API Key** and a **Secret Key**. [Get them here](https://alpaca.markets/).
 
 ### **Step 3: Install Dependencies**
