@@ -12,3 +12,12 @@ h1 {
     padding: 16px 16px;
     box-sizing: border-box;
 }
+
+button {
+    display: flex;
+}
+
+.tabs {
+    display: flex;
+    gap: 16px;
+}
