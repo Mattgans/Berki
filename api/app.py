@@ -203,5 +203,201 @@ def analyze():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/portfolio', methods=['POST'])
+def get_portfolio():
+    """Get user's current portfolio from Alpaca."""
+    data = request.get_json()
+    alpaca_api_key = data.get('alpaca_api_key')
+    alpaca_secret_key = data.get('alpaca_secret_key')
+    
+    if not alpaca_api_key or not alpaca_secret_key:
+        return jsonify({"error": "Missing Alpaca credentials"}), 400
+    
+    try:
+        base_url = 'https://paper-api.alpaca.markets'
+        api = tradeapi.REST(alpaca_api_key, alpaca_secret_key, base_url, api_version='v2')
+        
+        # Get account information
+        account = api.get_account()
+        
+        # Get current positions
+        positions = api.list_positions()
+        
+        # Get recent orders
+        orders = api.list_orders(status='all', limit=10)
+        
+        # Format positions data
+        holdings = []
+        total_holdings_value = 0
+        
+        for position in positions:
+            current_price = float(position.current_price) if position.current_price else 0
+            market_value = float(position.market_value) if position.market_value else 0
+            unrealized_pl = float(position.unrealized_pl) if position.unrealized_pl else 0
+            unrealized_plpc = float(position.unrealized_plpc) if position.unrealized_plpc else 0
+            
+            holdings.append({
+                'symbol': position.symbol,
+                'qty': float(position.qty),
+                'current_price': current_price,
+                'market_value': market_value,
+                'cost_basis': float(position.cost_basis) if position.cost_basis else 0,
+                'unrealized_pl': unrealized_pl,
+                'unrealized_plpc': unrealized_plpc * 100,  # Convert to percentage
+                'side': position.side
+            })
+            total_holdings_value += market_value
+        
+        # Format recent orders
+        recent_orders = []
+        for order in orders[:5]:  # Last 5 orders
+            recent_orders.append({
+                'symbol': order.symbol,
+                'side': order.side,
+                'qty': float(order.qty),
+                'status': order.status,
+                'filled_at': order.filled_at.isoformat() if order.filled_at else None,
+                'filled_avg_price': float(order.filled_avg_price) if order.filled_avg_price else None
+            })
+        
+        return jsonify({
+            'account': {
+                'buying_power': float(account.buying_power),
+                'cash': float(account.cash),
+                'portfolio_value': float(account.portfolio_value),
+                'equity': float(account.equity),
+                'last_equity': float(account.last_equity),
+                'daychange': float(account.equity) - float(account.last_equity),
+                'daychange_percent': ((float(account.equity) - float(account.last_equity)) / float(account.last_equity)) * 100 if float(account.last_equity) > 0 else 0
+            },
+            'holdings': holdings,
+            'recent_orders': recent_orders,
+            'total_holdings_value': total_holdings_value
+        })
+        
+    except Exception as e:
+        print(f"Portfolio fetch error: {str(e)}")
+        return jsonify({"error": f"Failed to fetch portfolio: {str(e)}"}), 500
+
+
+
+
+import yfinance as yf
+from datetime import datetime, timedelta
+
+# Update your existing /stock-history route with this new implementation
+@app.route('/stock-history', methods=['POST'])
+def get_stock_history():
+    """Get historical stock data using yfinance."""
+    data = request.get_json()
+    symbol = data.get('symbol')
+    if symbol.endswith('USD'):
+        symbol = symbol[:-3] + '-USD'
+        # symbol = symbol.replace('USD', '-USD')
+    timeframe = data.get('timeframe', '1d')  # 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max
+    
+    if not symbol:
+        return jsonify({"error": "Missing symbol"}), 400
+    
+    try:
+        # Map frontend timeframes to yfinance periods and intervals
+        timeframe_map = {
+            '5Min': {'period': '1d', 'interval': '5m'},
+            '1Hour': {'period': '5d', 'interval': '1h'},
+            '1Day': {'period': '1mo', 'interval': '1d'},
+            '1Week': {'period': '3mo', 'interval': '1wk'},
+            '1Month': {'period': '1y', 'interval': '1mo'}
+        }
+        
+        config = timeframe_map.get(timeframe, {'period': '1mo', 'interval': '1d'})
+        
+        # Get stock data using yfinance
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period=config['period'], interval=config['interval'])
+        
+        if hist.empty:
+            return jsonify({"error": f"No data found for symbol {symbol}"}), 404
+        
+        # Get current stock info
+        info = ticker.info
+        current_price = info.get('currentPrice', info.get('regularMarketPrice', 0))
+        
+        # Format data for charts
+        chart_data = []
+        for index, row in hist.iterrows():
+            chart_data.append({
+                'timestamp': index.isoformat(),
+                'date': index.strftime('%Y-%m-%d'),
+                'time': index.strftime('%H:%M'),
+                'open': float(row['Open']) if not pd.isna(row['Open']) else 0,
+                'high': float(row['High']) if not pd.isna(row['High']) else 0,
+                'low': float(row['Low']) if not pd.isna(row['Low']) else 0,
+                'close': float(row['Close']) if not pd.isna(row['Close']) else 0,
+                'volume': int(row['Volume']) if not pd.isna(row['Volume']) else 0
+            })
+        
+        return jsonify({
+            'symbol': symbol,
+            'timeframe': timeframe,
+            'current_price': current_price,
+            'company_name': info.get('longName', symbol),
+            'data': chart_data
+        })
+        
+    except Exception as e:
+        print(f"yfinance error for {symbol}: {str(e)}")
+        return jsonify({"error": f"Failed to fetch stock history: {str(e)}"}), 500
+
+# Add a new route to get current stock quotes
+@app.route('/stock-quote', methods=['POST'])
+def get_stock_quote():
+    """Get current stock quote using yfinance."""
+    data = request.get_json()
+    symbol = data.get('symbol')
+    if symbol.endswith('USD'):
+        symbol = symbol[:-3] + '-USD'
+    if not symbol:
+        return jsonify({"error": "Missing symbol"}), 400
+    
+    try:
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+        hist = ticker.history(period='2d', interval='1d')
+        
+        if hist.empty:
+            return jsonify({"error": f"No data found for symbol {symbol}"}), 404
+        
+        current_price = info.get('currentPrice', info.get('regularMarketPrice', 0))
+        previous_close = info.get('previousClose', 0)
+        
+        if len(hist) >= 2:
+            previous_close = float(hist.iloc[-2]['Close'])
+        
+        change = current_price - previous_close
+        change_percent = (change / previous_close * 100) if previous_close > 0 else 0
+        
+        return jsonify({
+            'symbol': symbol,
+            'company_name': info.get('longName', symbol),
+            'current_price': current_price,
+            'previous_close': previous_close,
+            'change': change,
+            'change_percent': change_percent,
+            'volume': info.get('volume', 0),
+            'market_cap': info.get('marketCap', 0),
+            'pe_ratio': info.get('trailingPE', 0),
+            'day_high': info.get('dayHigh', 0),
+            'day_low': info.get('dayLow', 0),
+            'fifty_two_week_high': info.get('fiftyTwoWeekHigh', 0),
+            'fifty_two_week_low': info.get('fiftyTwoWeekLow', 0)
+        })
+        
+    except Exception as e:
+        print(f"Quote fetch error for {symbol}: {str(e)}")
+        return jsonify({"error": f"Failed to fetch stock quote: {str(e)}"}), 500
+
+# Add pandas import at the top of your file if not already present
+import pandas as pd
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
