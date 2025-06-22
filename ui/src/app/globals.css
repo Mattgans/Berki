@@ -255,22 +255,6 @@ input:checked + .theme-slider .moon-icon {
   cursor: not-allowed;
 }
 
-.demo-credentials {
-  margin-top: 1.5rem;
-  text-align: center;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-}
-
-.demo-credentials p {
-  margin-bottom: 0.25rem;
-}
-
-.demo-key {
-  font-family: "Courier New", monospace;
-  font-size: 0.75rem;
-}
-
 /* Dashboard Styles */
 .dashboard {
   min-height: 100vh;

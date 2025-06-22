@@ -63,7 +63,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
           <div className="login-icon">
             <span>📈</span>
           </div>
-          <h1 className="login-title">TradeSim Pro Login</h1>
+          <h1 className="login-title">The Daily Prophet Login</h1>
           <p className="login-description">Enter your Alpaca trading credentials to access the platform</p>
         </div>
         <div className="login-content">
@@ -111,11 +111,6 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
             </button>
           </form>
 
-          <div className="demo-credentials">
-            <p>Demo credentials for testing:</p>
-            <p className="demo-key">API Key: demo-alpaca-key-12345</p>
-            <p className="demo-key">Secret: demo-alpaca-secret-67890</p>
-          </div>
         </div>
       </div>
     </div>

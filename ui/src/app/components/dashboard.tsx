@@ -61,7 +61,7 @@ export default function Dashboard({ credentials, onLogout }: DashboardProps) {
       <header className="dashboard-header">
         <div className="header-content">
           <div>
-            <h1 className="brand">TradeSim Pro</h1>
+            <h1 className="brand">The Daily Prophet</h1>
           </div>
 
           <div className="nav-tabs">
@@ -103,72 +103,9 @@ export default function Dashboard({ credentials, onLogout }: DashboardProps) {
         {activeTab === "analysis" && <NewsAnalysis credentials={credentials} />}
 
         {activeTab === "stocks" && (
-          <div className="content-grid">
-            {/* Stock Market Section */}
-            <div className="stocks-section">
-              <h2>Stock Market</h2>
-              <div className="stocks-grid">
-                {stocks.map((stock, index) => (
-                  <div key={index} className="stock-card">
-                    <div className="stock-header">
-                      <div className="stock-logo">
-                        <span>{stock.logo}</span>
-                      </div>
-                      <div className="stock-info">
-                        <h3>{stock.name}</h3>
-                        <p>{stock.type}</p>
-                      </div>
-                    </div>
-
-                    <div className="stock-price">
-                      <p className="price">{stock.price}</p>
-                      <div className={`stock-change ${stock.isPositive ? "positive" : "negative"}`}>
-                        <span className="change-icon">{stock.isPositive ? "📈" : "📉"}</span>
-                        <span>{stock.change}</span>
-                      </div>
-                    </div>
-
-                    <div className="stock-actions">
-                      <button className="btn-buy">Buy</button>
-                      <button className="btn-sell">Sell</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Portfolio Sidebar */}
-            <div className="portfolio-section">
-              <div className="portfolio-card">
-                <div className="portfolio-header">
-                  <div className="portfolio-icon">
-                    <span>📊</span>
-                  </div>
-                  <h3 className="portfolio-title">My Portfolio</h3>
-                </div>
-
-                <div className="portfolio-stats">
-                  <div className="stat-row">
-                    <span className="stat-label">Total Account Value:</span>
-                    <span className="stat-value">$100000.00</span>
-                  </div>
-
-                  <div className="stat-row">
-                    <span className="stat-label">Cash Balance:</span>
-                    <span className="stat-value positive">$100000.00</span>
-                  </div>
-
-                  <div className="stat-row">
-                    <span className="stat-label">Holdings Value:</span>
-                    <span className="stat-value">$0.00</span>
-                  </div>
-
-                  <div className="portfolio-divider">
-                    <p className="no-assets">No assets in portfolio.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="coming-soon">
+            <h2>Stock Trading</h2>
+            <p>Coming soon...</p>
           </div>
         )}
 
@@ -190,7 +127,7 @@ export default function Dashboard({ credentials, onLogout }: DashboardProps) {
       {/* Footer */}
       <footer className="footer">
         <div className="footer-content">
-          <p className="footer-text">TradeSim Pro - AI-Powered Trading Simulation</p>
+          <p className="footer-text">The Daily Prophet - AI-Powered Trading Simulation</p>
         </div>
       </footer>
     </div>

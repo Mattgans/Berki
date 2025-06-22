@@ -42,35 +42,29 @@ def get_ai_recommendations(articles, api_key):
         articles_text += f"Description: {article.get('description', '')}\n\n"
     
     prompt = f"""
-    Based on the following news articles, provide investment recommendations in JSON format:
+    You are an expert financial analyst AI. Your task is to analyze the provided list of news articles to generate investment recommendations.
 
-    {articles_text}
+    Follow these steps precisely:
+    
+Read through the entire JSON array of articles provided below.
+For each article, identify the primary companies mentioned and the sentiment of the news (Positive, Negative, or Neutral) regarding each company's business prospects.
+Synthesize the findings for each company across all articles they appear in.
+Based on the overall sentiment and potential business impact, select at least 3 and up to 5 promising stocks to invest in. For each, provide a stock ticker if it's a well-known public company.
+Provide a concise 'reasoning' for each recommendation, directly referencing the news content.
+Identify at least two 'stocksToAvoid' based on negative news and provide the reasoning.
+Your final output must be a single, valid JSON object and nothing else. Do not include any text, explanations, or markdown fences like ```json before or after the JSON block.
+If any of the stocks are a crypto currency, Please add "/USD" to the ticker. e.g. "BTC/USD" for Bitcoin.
+Here is the required JSON output structure:{{"investmentAnalysis": {{"stocksToInvest": [{{"companyName": "Example Company A", "stockTicker": "EXA", "reasoning": "A brief reason."}}],"stocksToAvoid": [{{"companyName": "Example Company B", "stockTicker": "EXB", "reasoning": "A brief reason."}}]}}}}
 
-    Please respond with a JSON object in this exact format:
-    {{
-        "investmentAnalysis": {{
-            "stocksToInvest": [
-                {{
-                    "companyName": "Company Name",
-                    "stockTicker": "TICKER",
-                    "reasoning": "Why to invest"
-                }}
-            ],
-            "stocksToAvoid": [
-                {{
-                    "companyName": "Company Name", 
-                    "stockTicker": "TICKER",
-                    "reasoning": "Why to avoid"
-                }}
-            ]
-        }}
-    }}
+    ---
+    Here are the news articles:
+    {json.dumps(articles, indent=2)}
     """
     
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
         response = model.generate_content(prompt)
-        
+        print(response)
         # Parse JSON from response
         response_text = response.text.strip()
         if response_text.startswith('```json'):
@@ -123,6 +117,7 @@ def execute_trades(stocks_to_buy, stocks_to_avoid, investment_amount, api_key, a
             if symbol.endswith('/USD'):
                 # For crypto, use the crypto endpoint
                 barset = api.get_crypto_bars(symbol, '5T').df.iloc[-1]
+                price = barset.close
                 qty = amount/barset.close
             else: 
                 trade = api.get_latest_trade(symbol)
